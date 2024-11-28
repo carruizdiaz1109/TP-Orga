@@ -1,5 +1,5 @@
 global main
-extern printf
+extern imprimir_secuencia  ; Declarar la función de C para imprimir
 
 ; PILA
 %macro ALINEAR_PILA 1
@@ -13,20 +13,21 @@ extern printf
     ret
 %endmacro
 
-; Macro para mostrar el valor de la tabla correspondiente al índice
-%macro MOSTRAR_INDICE 0
-    ; Cargar el primer byte de la secuencia binaria
-    movzx rax, byte [secuenciaBinariaA]    ; Cargar el valor en RAX y extenderlo
+; Macro para almacenar el valor de la tabla correspondiente a un índice
+%macro GUARDAR_EN_SECUENCIA 3
+    ; %1: Dirección base de la secuencia binaria
+    ; %2: Desplazamiento del byte a procesar
+    ; %3: Dirección de almacenamiento en secuenciaImprimible
+
+    ; Cargar el byte correspondiente de la secuencia binaria
+    movzx rax, byte [%1 + %2]              ; Cargar el valor en RAX y extenderlo
 
     ; Usar el valor como índice para acceder a la tabla
     lea rbx, [tabla]                       ; Cargar la dirección base de la tabla en RBX
     movzx rcx, byte [rbx + rax]            ; Obtener el carácter correspondiente
 
-    ; Preparar la llamada a printf
-    lea rdi, [formato]                     ; Cargar el formato
-    mov rsi, rcx                           ; Pasar el carácter como argumento
-    xor rax, rax                           ; Limpiar RAX para printf
-    call printf                            ; Llamar a printf
+    ; Guardar el carácter en secuenciaImprimible
+    mov byte [%3], cl                      ; Guardar el carácter en la posición correspondiente
 %endmacro
 
 section .text
@@ -34,11 +35,24 @@ section .text
 main:
     ALINEAR_PILA 16                        ; Configurar el marco de pila y reservar espacio
 
-    MOSTRAR_INDICE                         ; Mostrar el carácter correspondiente
+    ; Guardar el carácter correspondiente al primer byte en secuenciaImprimible[0]
+    GUARDAR_EN_SECUENCIA secuenciaBinariaA, 0, secuenciaImprimible
+
+    ; Guardar el carácter correspondiente al segundo byte en secuenciaImprimible[1]
+    GUARDAR_EN_SECUENCIA secuenciaBinariaA, 1, secuenciaImprimible + 1
+
+    ; Agregar el terminador nulo a secuenciaImprimible[2]
+    mov byte [secuenciaImprimible + 2], 0
+
+    ; Llamar a la función `imprimir_secuencia` de C
+    lea rdi, [secuenciaImprimible]         ; Pasar la dirección de secuenciaImprimible como argumento
+    call imprimir_secuencia                ; Llamar a la función
 
     DESALINEAR_PILA                        ; Restaurar el marco de pila
 
 section .data
-    secuenciaBinariaA db 0x1F, 0x03, 0x7A  ; Secuencia de bytes
+    secuenciaBinariaA db 0x1F, 0x03        ; Secuencia de 2 bytes
     tabla db "ABCDEFGHIJKLMNÑOPQRSTUVWXYZabcdefghijklmnñopqrstuvwxyz", 0 ; Tabla de letras
-    formato db "Carácter: %c", 10, 0       ; Formato para imprimir el carácter con salto de línea
+
+section .bss
+    secuenciaImprimible resb 3             ; Espacio para 2 caracteres y un terminador nulo
