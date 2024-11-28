@@ -33,7 +33,19 @@ section	.bss
 section	.text
 
 main:
+;codificacion
 
+;hex->bin
+;bin->char (pasando x dec)
+
+;decodificacion
+
+;char->bin (pasando x dec)
+;bin->hex
+
+;este proceso se repite en bloques de 3 bytes por la cantidad
+;de grupos de 3 bytes que sean
+;si viene una cantidad de grupos no multiplo de 3, rellenamos con 0s
 
 
 

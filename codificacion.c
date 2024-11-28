@@ -32,6 +32,6 @@ int _caracterHexadecimalADecimal(char letra) {
         if (lista[i].letra == letra) {
             return lista[i].valor;
         }
-    }
+    }   
     return -1;  // Retorna -1 si la letra no se encuentra
 }
