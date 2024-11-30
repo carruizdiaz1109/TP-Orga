@@ -34,15 +34,43 @@ extern imprimir_secuencia  ; Declarar la función de C para imprimir
         shl rax, 8                      ; Desplazo 8 bits a la izquierda
         or al, dl
 
+        call procesar_caracter
+
         ; Avanzar 3 bytes en secuenciaBinariaA
         add rsi, 3
         ; Avanzar 3 bytes en el contador
         add rdi, 3
      
-        jmp procesar_bloques              ; Repite el proceso para el siguiente bloque
+        jmp procesar_bloques           ; Repite el proceso para el siguiente bloque
 
     fin_codificacion:
 %endmacro
+
+procesar_caracter:
+    push rbx                     ; Guardar registros que se usan en el procedimiento
+    push r8
+
+    mov rbx, rax                 ; Copia `rax` a `rbx` para no modificar el original
+    xor r8, r8                   ; Inicializa el contador (r8 = 0)
+
+procesar_bucle_6bits:
+    cmp r8, 4                 ; ¿Hemos procesado los 4 grupos de 6 bits?
+    je fin_proceso_caracter
+
+    mov r10, rbx              ; Copia el valor original de `rbx` a `rcx`
+    and r10, 0x3F             ; Enmascara los 6 bits menos significativos de `rcx`
+    
+    ; Aquí puedes hacer algo con los 6 bits almacenados en `rcx`
+
+    shr rbx, 6                ; Desplaza `rbx` 6 bits a la derecha para el siguiente grupo
+    inc r8                    ; Incrementa el contador
+    jmp procesar_bucle_6bits  ; Continua al siguiente grupo
+
+
+fin_proceso_caracter:
+    pop r8                       ; Restaurar registros
+    pop rbx
+    ret                          ; Retorna al llamador
 
 
 
