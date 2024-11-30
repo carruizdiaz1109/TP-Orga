@@ -13,7 +13,6 @@ extern imprimir_secuencia  ; Declarar la función de C para imprimir
     ret
 %endmacro
 
-
 %macro CODIFICADOR 0
     xor rdi, rdi                        ; Inicializa el contador (rdi = 0)
     lea rsi, [secuenciaBinariaA]        ; Apunta al inicio de secuenciaBinariaA
@@ -34,7 +33,7 @@ extern imprimir_secuencia  ; Declarar la función de C para imprimir
         shl rax, 8                      ; Desplazo 8 bits a la izquierda
         or al, dl
 
-        call procesar_caracter
+        call dividir_bloque
 
         ; Avanzar 3 bytes en secuenciaBinariaA
         add rsi, 3
@@ -46,7 +45,7 @@ extern imprimir_secuencia  ; Declarar la función de C para imprimir
     fin_codificacion:
 %endmacro
 
-procesar_caracter:
+dividir_bloque:
     push rbx                     ; Guardar registros que se usan en el procedimiento
     push r8
 
