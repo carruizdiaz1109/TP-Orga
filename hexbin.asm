@@ -82,6 +82,7 @@ guardar_caracter:
 
     ; Buscar la primera posición vacía (byte con valor 0)
     lea rdi, [secuenciaImprimibleA] ; Dirección base del buffer
+
 .buscar_espacio:
     cmp byte [rdi], 0          ; ¿Es la posición actual igual a 0?
     je .escribir               ; Si es 0, es un espacio vacío
@@ -99,18 +100,19 @@ guardar_caracter:
     pop rsi
     ret                       ; Retornar
 
-
 section .text
 
 main:
     ALINEAR_PILA 16                      ; Configurar el marco de pila y reservar espacio
     CODIFICADOR
+    lea rdi, [secuenciaImprimibleA]      ; Cargar la dirección de secuenciaImprimibleA en rdi
+    call imprimir_secuencia              ; Llamar a la función de C para imprimir la secuencia
     DESALINEAR_PILA                      ; Restaurar el marco de pila
 
 section	.data
-	secuenciaBinariaA	db	0xC4, 0x94, 0x37, 0x95, 0x63, 0xA2, 0x1D, 0x3C 
-						db	0x86, 0xFC, 0x22, 0xA9, 0x3D, 0x7C, 0xA4, 0x51 
-						db	0x63, 0x7C, 0x29, 0x04, 0x93, 0xBB, 0x65, 0x18 
+	secuenciaBinariaA	db	0x73, 0x38, 0xE7, 0xF7, 0x34, 0x2C, 0x4F, 0x92
+;						db	0x49, 0x55, 0xE5, 0x9F, 0x8E, 0xF2, 0x75, 0x5A 
+;						db	0xD3, 0xC5, 0x53, 0x65, 0x68, 0x52, 0x78, 0x3F 
 	largoSecuenciaA		db	0x18 ; 24d
 
 	secuenciaImprmibleB db	"vhyAHZucgTUuznwTDciGQ8m4TuvUIyjU"
