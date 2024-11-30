@@ -72,22 +72,33 @@ fin_proceso_caracter:
     ret                          ; Retorna al llamador
 
 guardar_caracter:
-    push rsi                     ; Guardar registros que se modifican
+    push rsi                  ; Guardar registros que se modifican
     push rdi
-    push rax                     ; Preservar el valor de RAX
+    push rax
 
-    lea rsi, [TablaConversion]   ; Cargar la dirección base de la tabla de conversión
-    add rsi, r10                 ; Sumar los bits de R10 como índice
-    mov r11b, byte [rsi]         ; Cargar el carácter de la tabla en R11B
+    ; Buscar el carácter en la tabla
+    lea rsi, [TablaConversion] ; Cargar la dirección base de la tabla de conversión
+    add rsi, r10              ; Sumar el índice (bits en R10)
+    mov r11b, byte [rsi]      ; Cargar el carácter de la tabla en R11B
 
-    lea rdi, [secuenciaImprimibleA] ; Cargar la dirección base de la secuencia imprimible
-    add rdi, r8                  ; Avanzar a la posición actual en la secuencia
-    mov byte [rdi], r11b         ; Guardar el carácter en secuenciaImprimibleA
+    ; Buscar la primera posición vacía (byte con valor 0)
+    lea rdi, [secuenciaImprimibleA] ; Dirección base del buffer
+.buscar_espacio:
+    cmp byte [rdi], 0          ; ¿Es la posición actual igual a 0?
+    je .escribir               ; Si es 0, es un espacio vacío
+    add rdi, 1                 ; Avanzar a la siguiente posición
+    cmp rdi, secuenciaImprimibleA + 32 ; Verificar si llegamos al límite
+    jae .fin                   ; Si se excede el buffer, salir
+    jmp .buscar_espacio        ; Continuar buscando
 
-    pop rax                      ; Restaurar el valor original de RAX
-    pop rdi                      ; Restaurar registros
+.escribir:
+    mov byte [rdi], r11b       ; Escribir el carácter en la posición vacía
+
+.fin:
+    pop rax                   ; Restaurar el valor original de RAX
+    pop rdi                   ; Restaurar registros
     pop rsi
-    ret                          ; Retornar a `procesar_caracter`
+    ret                       ; Retornar
 
 
 section .text
