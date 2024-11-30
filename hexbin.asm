@@ -60,18 +60,34 @@ procesar_bucle_6bits:
     mov r10, rbx              ; Copia el valor original de `rbx` a `rcx`
     and r10, 0x3F             ; Enmascara los 6 bits menos significativos de `rcx`
     
-    ; Aquí puedes hacer algo con los 6 bits almacenados en `rcx`
+    call guardar_caracter
 
     shr rbx, 6                ; Desplaza `rbx` 6 bits a la derecha para el siguiente grupo
     inc r8                    ; Incrementa el contador
     jmp procesar_bucle_6bits  ; Continua al siguiente grupo
-
 
 fin_proceso_caracter:
     pop r8                       ; Restaurar registros
     pop rbx
     ret                          ; Retorna al llamador
 
+guardar_caracter:
+    push rsi                     ; Guardar registros que se modifican
+    push rdi
+    push rax                     ; Preservar el valor de RAX
+
+    lea rsi, [TablaConversion]   ; Cargar la dirección base de la tabla de conversión
+    add rsi, r10                 ; Sumar los bits de R10 como índice
+    mov r11b, byte [rsi]         ; Cargar el carácter de la tabla en R11B
+
+    lea rdi, [secuenciaImprimibleA] ; Cargar la dirección base de la secuencia imprimible
+    add rdi, r8                  ; Avanzar a la posición actual en la secuencia
+    mov byte [rdi], r11b         ; Guardar el carácter en secuenciaImprimibleA
+
+    pop rax                      ; Restaurar el valor original de RAX
+    pop rdi                      ; Restaurar registros
+    pop rsi
+    ret                          ; Retornar a `procesar_caracter`
 
 
 section .text
