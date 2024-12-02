@@ -1,5 +1,5 @@
 global main
-extern imprimir_secuencia  ; Declarar la función de C para imprimir
+extern puts  ; Declarar la función de C para imprimir
 
 ; PILA
 %macro ALINEAR_PILA 1
@@ -24,14 +24,12 @@ extern imprimir_secuencia  ; Declarar la función de C para imprimir
 
         xor rax, rax                    ; Limpiar rax antes de cada carga
 
-        mov al, byte [rsi]              ; Cargar el primer byte en al
-        mov dl, byte [rsi + 1]          ; Cargar el segundo byte en dl        
+        mov al, byte [rsi]          ; Cargar el tercer byte en al
         shl rax, 8                      ; Desplazo 8 bits a la izquierda
-        or al, dl
+        or al, byte [rsi+1]           ; Combinar con el segundo byte
 
-        mov dl, byte [rsi + 2]          ; Cargar el tercer byte en RDX
         shl rax, 8                      ; Desplazo 8 bits a la izquierda
-        or al, dl
+        or al, byte [rsi+2]               ; Combinar con el primer byte
 
         call dividir_bloque
 
@@ -106,7 +104,7 @@ main:
     ALINEAR_PILA 16                      ; Configurar el marco de pila y reservar espacio
     CODIFICADOR
     lea rdi, [secuenciaImprimibleA]      ; Cargar la dirección de secuenciaImprimibleA en rdi
-    call imprimir_secuencia              ; Llamar a la función de C para imprimir la secuencia
+    call puts              ; Llamar a la función de C para imprimir la secuencia
     DESALINEAR_PILA                      ; Restaurar el marco de pila
 
 section	.data
