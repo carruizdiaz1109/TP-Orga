@@ -1,7 +1,6 @@
 global main
-extern printf
+extern imprimir_secuencia ; Declarar función de C para imprimir
 
-; PILA
 %macro ALINEAR_PILA 1
     push rbp
     mov rbp, rsp
@@ -13,117 +12,94 @@ extern printf
     ret
 %endmacro
 
-; Macro para recorrer palabra y buscar posiciones en la tabla
-%macro RECORRER_PALABRA 0
-    mov dword [iterador], 0        ; Inicializar iterador
-iterar_palabra:
-    mov ecx, [iterador]            ; Índice actual
-    cmp ecx, 4                     ; Limitar al tamaño de 4 caracteres
-    jae fin_recorrer               ; Salir si se excede el límite
+%macro DECODIFICADOR 0
+    xor rdi, rdi                        ; Inicializa el contador (rdi = 0)
+    lea rsi, [secuenciaImprimibleB]     ; Apunta al inicio de secuenciaImprimibleB
+    lea rdx, [secuenciaBinariaB]        ; Apunta al inicio de secuenciaBinariaB
+    movzx rcx, byte [largoSecuenciaB]   ; Carga largoSecuenciaB en rcx
 
-    mov al, [palabra + ecx]        ; Cargar carácter actual
-    cmp al, 0                      ; ¿Es el fin de la cadena?
-    je fin_recorrer
+    procesar_bloques:
+        cmp rdi, rcx                    ; ¿Hemos procesado todos los bloques?
+        je fin_decodificacion           ; Salta si el contador alcanza el límite
 
-    ; Buscar posición
-    lea rsi, [TablaConversion]     ; Dirección de la tabla
-    push rcx                       ; Guardar registro temporalmente
-    call buscar_posicion           ; AL = posición encontrada
-    pop rcx                        ; Restaurar índice
-    mov [posiciones + ecx], al     ; Guardar la posición encontrada
+        ; Procesar 4 caracteres a bloques de 6 bits
+        xor rax, rax                    ; Limpiar rax antes de reconstruir
+        mov al, byte [rsi]              ; Leer el primer carácter
+        call obtener_indice             ; Obtener el índice en TablaConversion
+        shl rax, 6                      ; Desplazar 6 bits a la izquierda
 
-    ; Incrementar iterador
-    add dword [iterador], 1
-    jmp iterar_palabra
-fin_recorrer:
+        mov bl, byte [rsi + 1]          ; Leer el segundo carácter
+        call obtener_indice
+        or al, bl                       ; Agregar al bloque
+
+        shl rax, 6                      ; Desplazar 6 bits a la izquierda
+        mov bl, byte [rsi + 2]          ; Leer el tercer carácter
+        call obtener_indice
+        or al, bl
+
+        shl rax, 6                      ; Desplazar 6 bits a la izquierda
+        mov bl, byte [rsi + 3]          ; Leer el cuarto carácter
+        call obtener_indice
+        or al, bl
+
+        ; Dividir el bloque de 24 bits en 3 bytes
+        mov byte [rdx], al              ; Guardar el primer byte
+        shr rax, 8
+        mov byte [rdx + 1], al          ; Guardar el segundo byte
+        shr rax, 8
+        mov byte [rdx + 2], al          ; Guardar el tercer byte
+
+        ; Avanzar punteros y contador
+        add rsi, 4                      ; Avanzar 4 caracteres
+        add rdx, 3                      ; Avanzar 3 bytes
+        add rdi, 4                      ; Incrementar contador
+
+        jmp procesar_bloques            ; Repetir el proceso para el siguiente bloque
+
+    fin_decodificacion:
 %endmacro
 
-; Macro para mostrar posiciones encontradas (en binario)
-%macro MOSTRAR_POSICIONES 0
-    mov dword [iterador], 0        ; Reiniciar iterador
-mostrar_bucle:
-    mov ecx, [iterador]            ; Índice actual
-    cmp ecx, 4                     ; Limitar al tamaño de 4 caracteres
-    jae fin_mostrar                ; Salir si se excede el límite
+obtener_indice:
+    push rdi                           ; Guardar registros que se modificarán
+    push rsi
 
-    mov al, [posiciones + ecx]     ; Cargar posición actual
-    cmp al, -1                     ; ¿Fin de posiciones?
-    je fin_mostrar
+    lea rsi, [TablaConversion]         ; Cargar la tabla de conversión
+    xor rdi, rdi                       ; Inicializar índice
 
-    ; Convertir posición a binario
-    movzx rax, al                  ; Extender al a 64 bits
-    lea rdi, [buffer_binario]      ; Dirección del buffer para el binario
-    call convertir_a_binario       ; Llamar a la función de conversión
+.buscar_caracter:
+    cmp byte [rsi + rdi], al           ; Comparar carácter actual con `al`
+    je .encontrado                     ; Si coincide, salir del bucle
+    inc rdi                            ; Incrementar el índice
+    cmp rdi, 64                        ; ¿Fuera de rango de la tabla?
+    je .error                          ; Si es así, salir con error
+    jmp .buscar_caracter               ; Continuar buscando
 
-    ; Imprimir el binario
-    mov rdi, mloop_bin             ; Formato para imprimir el binario
-    mov rsi, buffer_binario        ; Pasar el binario convertido
-    xor rax, rax                   ; Preparar para printf
-    call printf
-
-    ; Incrementar iterador
-    add dword [iterador], 1
-    jmp mostrar_bucle
-fin_mostrar:
-%endmacro
-
-; Función para buscar la posición de un carácter en la tabla
-buscar_posicion:
-    xor rcx, rcx                  ; Inicializar índice
-buscar_bucle:
-    mov dl, [rsi + rcx]           ; Cargar carácter de la tabla
-    cmp dl, 0                     ; ¿Fin de tabla?
-    je no_encontrado
-
-    cmp dl, al                    ; ¿Coincide el carácter?
-    je encontrado
-
-    inc rcx                       ; Incrementar índice
-    jmp buscar_bucle
-
-no_encontrado:
-    mov al, -1                    ; Retornar -1 si no se encuentra
+.encontrado:
+    mov al, dil                        ; Guardar el índice en `al`
+    pop rsi                            ; Restaurar registros
+    pop rdi
     ret
 
-encontrado:
-    mov al, cl                    ; Retornar índice encontrado en AL
-    ret
-
-; Función para convertir un número a binario
-convertir_a_binario:
-    mov r8, 8                     ; Número de bits
-    lea rdi, [buffer_binario + 8] ; Apuntar al final del buffer
-    mov byte [rdi], 0             ; Terminar la cadena con un 0
-convertir_bucle:
-    dec rdi                       ; Retroceder un carácter en el buffer
-    mov r9, rax                   ; Copiar el valor de rax
-    and r9, 1                     ; Obtener el bit menos significativo
-    add r9b, '0'                  ; Convertir a carácter ASCII ('0' o '1')
-    mov [rdi], r9b                ; Almacenar en el buffer
-    shr rax, 1                    ; Desplazar rax un bit a la derecha
-    dec r8                        ; Decrementar contador de bits
-    jnz convertir_bucle           ; Repetir para los 8 bits
+.error:
+    ; Manejo de errores aquí si es necesario
+    mov al, 0                          ; Retorna 0 en caso de error
+    pop rsi
+    pop rdi
     ret
 
 section .text
+
 main:
-    ALINEAR_PILA 16
-
-    ; Modificar palabra reemplazando letras por posiciones
-    RECORRER_PALABRA
-
-    ; Mostrar posiciones encontradas en binario
-    MOSTRAR_POSICIONES
-
-    DESALINEAR_PILA
+    ALINEAR_PILA 16                     ; Configurar el marco de pila y reservar espacio
+    DECODIFICADOR
+    lea rdi, [secuenciaBinariaB]        ; Cargar la dirección de secuenciaBinariaB en rdi
+    call imprimir_secuencia             ; Llamar a la función de C para imprimir la secuencia
+    DESALINEAR_PILA                     ; Restaurar el marco de pila
 
 section .data
-    palabra db "AlEx", 0           ; Palabra de hasta 4 caracteres
-    mloop_bin db "Binario: %s", 10, 0
-    TablaConversion db "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", 0
+    secuenciaImprimibleB db "vhyAHZucgTUuznwTDciGQ8m4TuvUIyjU"
+    largoSecuenciaB      db 0x20 ; 32d
+    TablaConversion      db "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 section .bss
-    iterador resd 1
-    posiciones resb 4              ; Espacio reducido a 4 bytes
-    buffer_binario resb 9          ; Buffer para 8 bits + terminador nulo
-
+    secuenciaBinariaB    resb 24
