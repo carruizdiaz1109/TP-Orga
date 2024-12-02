@@ -1,0 +1,71 @@
+%macro CODIFICADOR 0
+    xor rdi, rdi                        ; Inicializa el contador (rdi = 0)
+    lea rsi, [secuenciaBinariaA]        ; Apunta al inicio de secuenciaBinariaA
+    movzx rcx, byte [largoSecuenciaA]   ; Carga largoSecuenciaA en rcx (64 bits)
+
+    procesar_bloques:
+        cmp rcx, 3                      ; ¿Quedan al menos 3 bytes por procesar?
+        jb fin_codificacion             ; Salta si no hay suficientes bytes
+
+        xor rax, rax                    ; Limpiar rax antes de cada carga
+
+        mov al, byte [rsi]              ; Cargar el primer byte en al
+        shl rax, 8                      ; Desplazar 8 bits a la izquierda
+        mov al, byte [rsi+1]            ; Cargar el segundo byte en al
+        shl rax, 8                      ; Desplazar 8 bits a la izquierda
+        mov al, byte [rsi+2]            ; Cargar el tercer byte en al
+
+        call dividir_bloque
+
+        ; Avanzar 3 bytes en secuenciaBinariaA
+        add rsi, 3
+        ; Reducir el contador de bytes restantes
+        sub rcx, 3
+
+        jmp procesar_bloques            ; Repite el proceso para el siguiente bloque
+
+    fin_codificacion:
+        ret
+%endmacro
+
+dividir_bloque:
+    push rbx                            ; Guardar registros que se usan en el procedimiento
+    push r8
+
+    mov rbx, rax                        ; Copia `rax` a `rbx` para no modificar el original
+    xor r8, r8                          ; Inicializa el contador (r8 = 0)
+
+procesar_bucle_6bits:
+    cmp r8, 4                           ; ¿Hemos procesado los 4 grupos de 6 bits?
+    je fin_proceso_caracter
+
+    mov r10, rbx                        ; Copia el valor original de `rbx` a `r10`
+    and r10, 0x3F                       ; Enmascara los 6 bits menos significativos de `r10`
+
+    call guardar_caracter
+
+    shr rbx, 6                          ; Desplaza `rbx` 6 bits a la derecha para el siguiente grupo
+    inc r8                              ; Incrementa el contador
+    jmp procesar_bucle_6bits            ; Continua al siguiente grupo
+
+fin_proceso_caracter:
+    pop r8                              ; Restaurar registros
+    pop rbx
+    ret                                 ; Retorna al llamador
+
+guardar_caracter:
+    push rsi                            ; Guardar registros que se modifican
+    push rdi
+
+    ; Buscar el carácter en la tabla
+    lea rsi, [TablaConversion]          ; Cargar la dirección base de la tabla de conversión
+    add rsi, r10                        ; Sumar el índice (bits en r10)
+    mov r10b, byte [rsi]                ; Cargar el carácter de la tabla en r10b
+
+    ; Guardar el carácter en secuenciaImprimibleA
+    mov byte [rdi], r10b                ; Escribir el carácter en la posición actual
+    inc rdi                             ; Avanzar al siguiente byte en la salida
+
+    pop rdi                             ; Restaurar registros
+    pop rsi
+    ret                                 ; Retornar
