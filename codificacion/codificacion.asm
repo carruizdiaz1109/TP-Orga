@@ -24,12 +24,11 @@ extern puts  ; Declarar la función de C para imprimir
 
         xor rax, rax                    ; Limpiar rax antes de cada carga
 
-        mov al, byte [rsi]          ; Cargar el tercer byte en al
-        shl rax, 8                      ; Desplazo 8 bits a la izquierda
-        or al, byte [rsi+1]           ; Combinar con el segundo byte
-
-        shl rax, 8                      ; Desplazo 8 bits a la izquierda
-        or al, byte [rsi+2]               ; Combinar con el primer byte
+        mov al, byte [rsi]   ; Cargar el tercer byte en al
+        shl rax, 8             ; Desplazar 8 bits a la izquierda
+        mov al, byte [rsi+1]   ; Cargar el segundo byte en al
+        shl rax, 8             ; Desplazar 8 bits a la izquierda
+        mov al, byte [rsi+2]     ; Cargar el primer byte en al
 
         call dividir_bloque
 
@@ -42,6 +41,7 @@ extern puts  ; Declarar la función de C para imprimir
 
     fin_codificacion:
 %endmacro
+
 
 dividir_bloque:
     push rbx                     ; Guardar registros que se usan en el procedimiento
