@@ -2,7 +2,7 @@
 global	main
 
 section .data
-    secuenciaImprimibleA db "Qy2A2dhEivizBySXb/09gX+tk/2ExnYb" 
+    secuenciaImprimibleA db "vhyAHZucgTUuznwTDciGQ8m4TuvUIyjU" 
     largoSecuenciaImprimibleA db 32                             
     TablaConversion db "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", 0 
 
@@ -14,7 +14,7 @@ section .text
 main:
     ; Inicializar punteros y registros
     mov rsi, secuenciaImprimibleA        
-    mov rdi, secuenciaBinariaA           
+    lea rdi, [secuenciaBinariaA]        ; Asegúrate de que rdi apunte al inicio de la secuencia          
     movzx r15, byte [largoSecuenciaImprimibleA] 
     xor rcx, rcx                         ; Contador de caracteres procesados
     lea rbx, [TablaConversion]           ; Dirección de la tabla de conversión
@@ -50,11 +50,11 @@ decode_loop:
     or rax, r8                ; Acumulamos el cuarto índice
 
    ; Extraer y guardar los 3 bytes 
-   mov byte [rdi], al             ; Primer byte
+   mov byte [rdi + 2], al             ; Primer byte
    shr rax, 8                    
    mov byte [rdi + 1], al         ; Segundo byte
    shr rax, 8                     
-   mov byte [rdi + 2], al         ; Tercer byte
+   mov byte [rdi ], al         ; Tercer byte
 
    ; Avanzar punteros
    add rcx, 4                           ; Avanzar 4 caracteres de entrada
