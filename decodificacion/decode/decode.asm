@@ -12,9 +12,8 @@ section .bss
 section .text
 
 main:
-    ; Inicializar punteros y registros
     mov rsi, secuenciaImprimibleA        
-    lea rdi, [secuenciaBinariaA]        ; Asegúrate de que rdi apunte al inicio de la secuencia          
+    lea rdi, [secuenciaBinariaA]                 
     movzx r15, byte [largoSecuenciaImprimibleA] 
     xor rcx, rcx                         ; Contador de caracteres procesados
     lea rbx, [TablaConversion]           ; Dirección de la tabla de conversión
@@ -23,19 +22,18 @@ decode_loop:
     cmp rcx, r15                         
     jge fin                             
 
-    ; Procesar 4 caracteres -> 3 bytes binarios
     xor rax, rax                        
 
     ; Procesamos el primer carácter
     movzx r8, byte [rsi + rcx]
     call buscar_indice
-    mov rax, r8 
+    mov rax, r8                     ; Acumulamos el primer índice
 
    ; Procesamos el segundo carácter
    movzx r8, byte [rsi + rcx + 1]
    call buscar_indice
-   shl rax, 6                      ; Desplazamos 6 bits a la izquierda, ahora rax = 01000000000000
-    or rax, r8     
+   shl rax, 6                      ; Desplazamos 6 bits a la izquierda
+    or rax, r8                      ; Acumulamos el segundo indice
 
    ;  Procesamos el tercer carácter
    movzx r8, byte [rsi + rcx + 2]
@@ -49,7 +47,7 @@ decode_loop:
     shl rax, 6                ; Desplazamos 6 bits a la izquierda
     or rax, r8                ; Acumulamos el cuarto índice
 
-   ; Extraer y guardar los 3 bytes 
+   ; Extraemos y guardamos los 3 bytes 
    mov byte [rdi + 2], al             ; Primer byte
    shr rax, 8                    
    mov byte [rdi + 1], al         ; Segundo byte
