@@ -1,3 +1,6 @@
+
+global	main
+
 section .data
     secuenciaImprimibleA db "Qy2A2dhEivizBySXb/09gX+tk/2ExnYb" 
     largoSecuenciaImprimibleA db 32                             
@@ -7,9 +10,8 @@ section .bss
     secuenciaBinariaA resb 24 
 
 section .text
-    global _start
 
-_start:
+main:
     ; Inicializar punteros y registros
     mov rsi, secuenciaImprimibleA        
     mov rdi, secuenciaBinariaA           
@@ -17,9 +19,9 @@ _start:
     xor rcx, rcx                         ; Contador de caracteres procesados
     lea rbx, [TablaConversion]           ; Dirección de la tabla de conversión
 
-.decode_loop:
+decode_loop:
     cmp rcx, r15                         
-    jge .fin                             
+    jge fin                             
 
     ; Procesar 4 caracteres -> 3 bytes binarios
     xor rax, rax                        
@@ -27,22 +29,25 @@ _start:
     ; Procesamos el primer carácter
     movzx r8, byte [rsi + rcx]
     call buscar_indice
-    shl rax, 18 
+    mov rax, r8 
 
    ; Procesamos el segundo carácter
    movzx r8, byte [rsi + rcx + 1]
    call buscar_indice
-   shl rax, 12  
+   shl rax, 6                      ; Desplazamos 6 bits a la izquierda, ahora rax = 01000000000000
+    or rax, r8     
 
    ;  Procesamos el tercer carácter
    movzx r8, byte [rsi + rcx + 2]
    call buscar_indice
-   shl rax, 6   
+    shl rax, 6                ; Desplazamos 6 bits a la izquierda
+    or rax, r8                ; Acumulamos el tercer índice
 
    ; Procesamos el cuarto carácter
    movzx r8, byte [rsi + rcx + 3]
    call buscar_indice
-   or rax, r8   ; Combinar el cuarto carácter con el valor acumulado
+    shl rax, 6                ; Desplazamos 6 bits a la izquierda
+    or rax, r8                ; Acumulamos el cuarto índice
 
    ; Extraer y guardar los 3 bytes 
    mov byte [rdi], al             ; Primer byte
@@ -54,9 +59,9 @@ _start:
    ; Avanzar punteros
    add rcx, 4                           ; Avanzar 4 caracteres de entrada
    add rdi, 3                           ; Avanzar 3 bytes de salida
-   jmp .decode_loop                     
+   jmp decode_loop                     
 
-.fin:
+fin:
     ; Salir del programa
     mov eax, 60                          
     xor edi, edi                         
@@ -66,15 +71,15 @@ _start:
 buscar_indice:
     xor r9, r9                           ; Inicializamos el iterador en 0
 
-.buscar:
-    mov al, byte [rbx + r9]             
-    cmp al, r8b                          ; Comparamos caracter de conversion con el de la secuencia
-    je .encontrado                       
+buscar:
+    mov r10b, byte [rbx + r9]             
+    cmp r10b, r8b                          ; Comparamos caracter de conversion con el de la secuencia
+    je encontrado                       
     inc r9                             
     cmp byte [rbx + r9], 0               
-    jne .buscar                          
+    jne buscar                          
 
-.encontrado:
+encontrado:
     mov r8, r9                           ; Guardar el índice encontrado en r8
     ret                                  
 
